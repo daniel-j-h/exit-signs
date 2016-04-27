@@ -21,8 +21,23 @@ using PositiveIndex = osmium::index::map::SparseMemArray<osmium::unsigned_object
 using LocationHandler = osmium::handler::NodeLocationsForWays<PositiveIndex>;
 
 
+static auto I(const char* s){ return s ? s : ""; }
+
+
 struct ExitSignHandler final : osmium::handler::Handler {
-  void node(const osmium::Node& node) { (void)node; }
+  void node(const osmium::Node& node) {
+    const auto* ref = node.get_value_by_key("ref");
+    const auto* name = node.get_value_by_key("name");
+    const auto* exit_to = node.get_value_by_key("exit_to");
+
+#ifndef NDEBUG
+    std::printf("Node: %s, Ref: %s, ExitTo: %s\n",
+        I(name), I(ref), I(exit_to));
+#endif
+
+    if (exit_to)
+      std::printf("%f,%f\n", node.location().lon(), node.location().lat());
+  }
 
   void way(const osmium::Way& way) {
     const auto* highway = way.get_value_by_key("highway");
@@ -32,26 +47,16 @@ struct ExitSignHandler final : osmium::handler::Handler {
     const auto* ref = way.get_value_by_key("ref");
 
     const auto* destination = way.get_value_by_key("destination");
-    const auto* destination_fwd = way.get_value_by_key("destination:forward");
-    const auto* destination_bkw = way.get_value_by_key("destination:backward");
-
-    const auto I = [](const auto* s){ return s ? s : ""; };
+    const auto* destination_ref = way.get_value_by_key("destination:ref");
 
 #ifndef NDEBUG
-    std::printf("Highway: %s, Ref: %s, Dst: %s, DstFwd: %s, DstBkw: %s\n",
-        I(highway), I(ref), I(destination), I(destination_fwd), I(destination_bkw));
+    std::printf("Way: %s, Ref: %s, Dst: %s, DstRef: %s\n",
+        I(highway), I(ref), I(destination), I(destination_ref));
 #endif
 
     if (destination)
       for (const auto& node : way.nodes())
         std::printf("%f,%f\n", node.location().lon(), node.location().lat());
-
-    (void)highway;
-    (void)ref;
-    (void)destination;
-    (void)destination_fwd;
-    (void)destination_bkw;
-    (void)I;
   }
 };
 
