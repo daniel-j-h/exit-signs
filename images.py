@@ -26,55 +26,59 @@ def main():
         exit('export EXIT_SIGNS_CLIENT_ID=')
 
     with open(args.signFile, 'r') as handle, Session() as session:
-        reader = CSVReader(handle)
-        for line in reader:
+        mkImagesFor = lambda lon, lat: mkImages(args.outDirectory, clientId, session, lon, lat)
+
+        for line in CSVReader(handle):
             longitude = float(line[0])
             latitude = float(line[1])
+            mkImagesFor(longitude, latitude)
 
-            params = {'client_id': clientId, 'lon': longitude, 'lat': latitude, 'distance': kMaxDistanceInMeters}
-            response = session.get(kNearestService, params=params)
-            sleep(kHttpTimeoutInSeconds)
 
-            if response.status_code != 200:
-                print('Error: unable to find images for {:.5f}, {:.5f}'.format(longitude, latitude))
-                continue
+def mkImages(outDirectory, clientId, session, longitude, latitude):
+    params = {'client_id': clientId, 'lon': longitude, 'lat': latitude, 'distance': kMaxDistanceInMeters}
+    response = session.get(kNearestService, params=params)
+    sleep(kHttpTimeoutInSeconds)
 
-            json = response.json()
+    if response.status_code != 200:
+        print('Error: unable to find images for {:.5f}, {:.5f}'.format(longitude, latitude))
+        return
 
-            if json['more']:
-                pass  # Implement pagination
+    json = response.json()
 
-            images = json['ims']
+    if json['more']:
+        pass  # Implement pagination? Seems like kMaxImagesPerLocation is good enough for now.
 
-            if not images:
-                print('Error: no nearest images found for {:.5f}, {:.5f}'.format(longitude, latitude))
-                continue
+    images = json['ims']
 
-            # Take a bunch instead of just a single nearest image
-            images.sort(key=lambda image: image['distance'])
+    if not images:
+        print('Error: no nearest images found for {:.5f}, {:.5f}'.format(longitude, latitude))
+        return
 
-            for nearest in images[:kMaxImagesPerLocation]:
-                imageAngle = nearest['ca']
-                imageLongitude = nearest['lon']
-                imageLatitude = nearest['lat']
-                imageDistance = nearest['distance']
-                imageKey = nearest['key']
-                imageUrl = kImageBase.format(key=imageKey, resolution=kImageResolution)
+    # Take a bunch instead of just a single nearest image
+    images.sort(key=lambda image: image['distance'])
 
-                print('Found: at {:.5f},{:.5f} for {:.5f},{:.5f} with distance {:.0f} meters' \
-                      .format(imageLongitude, imageLatitude, longitude, latitude, imageDistance))
+    for nearest in images[:kMaxImagesPerLocation]:
+        imageAngle = nearest['ca']
+        imageLongitude = nearest['lon']
+        imageLatitude = nearest['lat']
+        imageDistance = nearest['distance']
+        imageKey = nearest['key']
+        imageUrl = kImageBase.format(key=imageKey, resolution=kImageResolution)
 
-                imageResponse = session.get(imageUrl)
-                sleep(kHttpTimeoutInSeconds)
+        print('Found: at {:.5f},{:.5f} for {:.5f},{:.5f} with distance {:.0f} meters' \
+              .format(imageLongitude, imageLatitude, longitude, latitude, imageDistance))
 
-                if imageResponse.status_code != 200:
-                    print('Error: unable to fetch image for {:.5f}, {:.5f}'.format(longitude, latitude))
-                    continue
+        imageResponse = session.get(imageUrl)
+        sleep(kHttpTimeoutInSeconds)
 
-                saveTo = path.join(args.outDirectory, '{}.jpg'.format(imageKey))
+        if imageResponse.status_code != 200:
+            print('Error: unable to fetch image for {:.5f}, {:.5f}'.format(longitude, latitude))
+            continue
 
-                with open(saveTo, 'wb') as handle:
-                    _ = handle.write(imageResponse.content)
+        saveTo = path.join(outDirectory, '{}.jpg'.format(imageKey))
+
+        with open(saveTo, 'wb') as handle:
+            _ = handle.write(imageResponse.content)
 
 
 def mkClientId():
