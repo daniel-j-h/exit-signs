@@ -13,7 +13,7 @@ from requests import Session
 kImageBase = 'https://d1cuyjsrcm0gby.cloudfront.net/{key}/thumb-{resolution}.jpg'
 kNearestService = 'https://a.mapillary.com/v2/search/im/close'
 kImageResolution = 640 # in [320, 640, 1024, 2048]
-kMaxDistanceInMeters = 50
+kMaxDistanceInMeters = 35
 kHttpTimeoutInSeconds = 0.2
 
 def main():
@@ -34,7 +34,7 @@ def main():
             sleep(kHttpTimeoutInSeconds)
 
             if response.status_code != 200:
-                print('Error: unable to find images for {}, {}'.format(longitude, latitude))
+                print('Error: unable to find images for {:.5f}, {:.5f}'.format(longitude, latitude))
                 continue
 
             json = response.json()
@@ -45,7 +45,7 @@ def main():
             images = json['ims']
 
             if not images:
-                print('Error: no nearest images found for {}, {}'.format(longitude, latitude))
+                print('Error: no nearest images found for {:.5f}, {:.5f}'.format(longitude, latitude))
                 continue
 
             # Take a bunch, instead of just a single nearest image
@@ -60,14 +60,14 @@ def main():
             imageKey = nearest['key']
             imageUrl = kImageBase.format(key=imageKey, resolution=kImageResolution)
 
-            print('Found: at {},{} for {},{} with distance {} meters' \
-                  .format(imageLongitude, imageLatitude, longitude, latitude, int(imageDistance)))
+            print('Found: at {:.5f},{:.5f} for {:.5f},{:.5f} with distance {:.0f} meters' \
+                  .format(imageLongitude, imageLatitude, longitude, latitude, imageDistance))
 
             imageResponse = session.get(imageUrl)
             sleep(kHttpTimeoutInSeconds)
 
             if imageResponse.status_code != 200:
-                print('Error: unable to fetch image for {}, {}'.format(longitude, latitude))
+                print('Error: unable to fetch image for {:.5f}, {:.5f}'.format(longitude, latitude))
                 continue
 
             saveTo = path.join(args.outDirectory, '{}.jpg'.format(imageKey))

@@ -36,7 +36,7 @@ struct ExitSignHandler final : osmium::handler::Handler {
 #endif
 
     if (exit_to)
-      std::printf("%f,%f\n", node.location().lon(), node.location().lat());
+      std::printf("%.5f,%.5f\n", node.location().lon(), node.location().lat());
   }
 
   void way(const osmium::Way& way) {
@@ -56,7 +56,7 @@ struct ExitSignHandler final : osmium::handler::Handler {
 
     if (destination)
       for (const auto& node : way.nodes())
-        std::printf("%f,%f\n", node.location().lon(), node.location().lat());
+        std::printf("%.5f,%.5f\n", node.location().lon(), node.location().lat());
   }
 };
 
