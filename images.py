@@ -14,7 +14,7 @@ kImageBase = 'https://d1cuyjsrcm0gby.cloudfront.net/{key}/thumb-{resolution}.jpg
 kNearestService = 'https://a.mapillary.com/v2/search/im/close'
 kImageResolution = 640 # in [320, 640, 1024, 2048]
 kMaxDistanceInMeters = 35
-kHttpTimeoutInSeconds = 0.2
+kHttpTimeoutInSeconds = 0.1
 kMaxImagesPerLocation = 3
 
 
@@ -31,7 +31,11 @@ def main():
         for idx, line in enumerate(CSVReader(handle)):
             longitude = float(line[0])
             latitude = float(line[1])
-            mkImagesFor(idx, longitude, latitude)
+            try:
+                mkImagesFor(idx, longitude, latitude)
+            except Exception as e:
+                print('Error[{}]: unexpected exception'.format(idx))
+
 
 
 def mkImages(outDirectory, clientId, session, idx, longitude, latitude):
