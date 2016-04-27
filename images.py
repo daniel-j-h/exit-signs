@@ -26,21 +26,21 @@ def main():
         exit('export EXIT_SIGNS_CLIENT_ID=')
 
     with open(args.signFile, 'r') as handle, Session() as session:
-        mkImagesFor = lambda lon, lat: mkImages(args.outDirectory, clientId, session, lon, lat)
+        mkImagesFor = lambda idx, lon, lat: mkImages(args.outDirectory, clientId, session, idx, lon, lat)
 
-        for line in CSVReader(handle):
+        for idx, line in enumerate(CSVReader(handle)):
             longitude = float(line[0])
             latitude = float(line[1])
-            mkImagesFor(longitude, latitude)
+            mkImagesFor(idx, longitude, latitude)
 
 
-def mkImages(outDirectory, clientId, session, longitude, latitude):
+def mkImages(outDirectory, clientId, session, idx, longitude, latitude):
     params = {'client_id': clientId, 'lon': longitude, 'lat': latitude, 'distance': kMaxDistanceInMeters}
     response = session.get(kNearestService, params=params)
     sleep(kHttpTimeoutInSeconds)
 
     if response.status_code != 200:
-        print('Error: unable to find images for {:.5f}, {:.5f}'.format(longitude, latitude))
+        print('Error[{}]: nearest request failed'.format(idx))
         return
 
     json = response.json()
@@ -51,7 +51,7 @@ def mkImages(outDirectory, clientId, session, longitude, latitude):
     images = json['ims']
 
     if not images:
-        print('Error: no nearest images found for {:.5f}, {:.5f}'.format(longitude, latitude))
+        print('Error[{}]: no images found'.format(idx))
         return
 
     # Take a bunch instead of just a single nearest image
@@ -65,14 +65,13 @@ def mkImages(outDirectory, clientId, session, longitude, latitude):
         imageKey = nearest['key']
         imageUrl = kImageBase.format(key=imageKey, resolution=kImageResolution)
 
-        print('Found: at {:.5f},{:.5f} for {:.5f},{:.5f} with distance {:.0f} meters' \
-              .format(imageLongitude, imageLatitude, longitude, latitude, imageDistance))
+        print('Found[{}]: image with distance {:.0f} meters'.format(idx, imageDistance))
 
         imageResponse = session.get(imageUrl)
         sleep(kHttpTimeoutInSeconds)
 
         if imageResponse.status_code != 200:
-            print('Error: unable to fetch image for {:.5f}, {:.5f}'.format(longitude, latitude))
+            print('Error[{}]: image request failed'.format(idx))
             continue
 
         saveTo = path.join(outDirectory, '{}.jpg'.format(imageKey))
