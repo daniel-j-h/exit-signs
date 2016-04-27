@@ -15,6 +15,8 @@ kNearestService = 'https://a.mapillary.com/v2/search/im/close'
 kImageResolution = 640 # in [320, 640, 1024, 2048]
 kMaxDistanceInMeters = 35
 kHttpTimeoutInSeconds = 0.2
+kMaxImagesPerLocation = 3
+
 
 def main():
     args = mkArguments()
@@ -48,32 +50,31 @@ def main():
                 print('Error: no nearest images found for {:.5f}, {:.5f}'.format(longitude, latitude))
                 continue
 
-            # Take a bunch, instead of just a single nearest image
-            # images.sort(key=lambda image: image['distance'])
+            # Take a bunch instead of just a single nearest image
+            images.sort(key=lambda image: image['distance'])
 
-            nearest = min(images, key=lambda image: image['distance'])
+            for nearest in images[:kMaxImagesPerLocation]:
+                imageAngle = nearest['ca']
+                imageLongitude = nearest['lon']
+                imageLatitude = nearest['lat']
+                imageDistance = nearest['distance']
+                imageKey = nearest['key']
+                imageUrl = kImageBase.format(key=imageKey, resolution=kImageResolution)
 
-            imageAngle = nearest['ca']
-            imageLongitude = nearest['lon']
-            imageLatitude = nearest['lat']
-            imageDistance = nearest['distance']
-            imageKey = nearest['key']
-            imageUrl = kImageBase.format(key=imageKey, resolution=kImageResolution)
+                print('Found: at {:.5f},{:.5f} for {:.5f},{:.5f} with distance {:.0f} meters' \
+                      .format(imageLongitude, imageLatitude, longitude, latitude, imageDistance))
 
-            print('Found: at {:.5f},{:.5f} for {:.5f},{:.5f} with distance {:.0f} meters' \
-                  .format(imageLongitude, imageLatitude, longitude, latitude, imageDistance))
+                imageResponse = session.get(imageUrl)
+                sleep(kHttpTimeoutInSeconds)
 
-            imageResponse = session.get(imageUrl)
-            sleep(kHttpTimeoutInSeconds)
+                if imageResponse.status_code != 200:
+                    print('Error: unable to fetch image for {:.5f}, {:.5f}'.format(longitude, latitude))
+                    continue
 
-            if imageResponse.status_code != 200:
-                print('Error: unable to fetch image for {:.5f}, {:.5f}'.format(longitude, latitude))
-                continue
+                saveTo = path.join(args.outDirectory, '{}.jpg'.format(imageKey))
 
-            saveTo = path.join(args.outDirectory, '{}.jpg'.format(imageKey))
-
-            with open(saveTo, 'wb') as handle:
-                _ = handle.write(imageResponse.content)
+                with open(saveTo, 'wb') as handle:
+                    _ = handle.write(imageResponse.content)
 
 
 def mkClientId():
