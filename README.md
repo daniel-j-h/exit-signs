@@ -23,13 +23,13 @@ Grab some OSM extracts:
 
 Run the Sign location extractor on the extract and save out a list of locations:
 
-    ./build/Release/exit-signs osm/*.osm.pbf > signLocations.csv
+    ./build/Release/extract-locations osm/*.osm.pbf > signLocations.csv
 
 Get clientId from Mapillary and use it to fetch images for locations:
 
     export EXIT_SIGNS_CLIENT_ID='YOUR-CLIENT-ID'
     mkdir -p signImages
-    ./images.py signLocations.csv signImages
+    ./fetch-images.py signLocations.csv signImages
 
 
 ## License
