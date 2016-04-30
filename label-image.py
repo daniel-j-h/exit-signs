@@ -5,6 +5,8 @@ from sys import exit
 from csv import writer as CSVWriter
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
+import numpy as np
+
 from skimage import io
 
 # from skimage.viewer.plugins import LabelPainter
@@ -50,8 +52,11 @@ def main():
         writer = CSVWriter(handle)
         for i in range(0, len(points) - 1, 2):
             p0, p1 = points[i], points[i+1]
-            # Region is made up of: path, x0, y0, x1, y1
-            writer.writerow([abspath(args.image), p0[0], p0[1], p1[0], p1[1]])
+            (x0, y0) = np.min([p0, p1], axis=0)
+            (x1, y1) = np.max([p0, p1], axis=0)
+
+            # Region is made up of: path, x0, y0, x1, y1 (bottom left, top right)
+            writer.writerow([abspath(args.image), x0, y0, x1, y1])
 
 
 def mkArguments():

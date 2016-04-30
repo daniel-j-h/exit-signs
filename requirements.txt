@@ -1,3 +1,5 @@
 requests
 scikit-image
 matplotlib
+keras
+scikit-learn
