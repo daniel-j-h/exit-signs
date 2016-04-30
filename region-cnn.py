@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 
 from sys import exit
+from random import randint
 from csv import reader as CSVReader
 from collections import defaultdict, namedtuple
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 import numpy as np
 
-from skimage import io
+from skimage import io, draw
 from skimage.segmentation import felzenszwalb
 
 # The following is guided by the R-CNN paper [0] and selective search as proposed in [1].
+# This is work in progress and we're taking a lot of shortcuts here to get a MVP going.
 #
 # [0] "Rich feature hierarchies for accurate object detection and semantic segmentation"
 #     doi: 10.1109/TPAMI.2015.2437384
@@ -23,27 +25,41 @@ from skimage.segmentation import felzenszwalb
 
 kFelzenszwalbScale = 500
 
-Rectangle = namedtuple('Rectangle', 'x0 y0 x1 y1')
+class Rectangle(namedtuple('Rectangle', 'x0 y0 x1 y1')):
+    def pixels(_, shape):
+        return draw.polygon([_.x0, _.x0, _.x1, _.x1], [_.y0, _.y1, _.y1, _.y0], shape)
 
 
 def selectiveSearch(image):
-    mask = felzenszwalb(image, scale=kFelzenszwalbScale)
-    numRegions = mask.max()
+    segments = felzenszwalb(image, scale=kFelzenszwalbScale)
+    numRegions = segments.max()
 
     def aabb(region):
         (x0, y0) = np.min(region, axis=0)
         (x1, y1) = np.max(region, axis=0)
         return Rectangle(x0, y0, x1, y1)
 
+    rectangles = []
+
     for regionTag in range(numRegions):
-        selectedRegion = mask == regionTag
+        selectedRegion = segments == regionTag
         regionPixelIndices = np.transpose(np.nonzero(selectedRegion))
         rectangle = aabb(regionPixelIndices)
-        print(rectangle)
+        rectangles.append(rectangle)
 
-    # Implement merging, similarities, ..
+    # Implement similarities, neighbourhood merging.
+    # Felzenszwalb's segmentation is ridiculously good already.
 
-    io.imshow_collection([image, mask])
+    marked = np.zeros(image.shape, dtype=np.uint8)
+
+    for rectangle in rectangles:
+        rr, cc = rectangle.pixels(marked.shape)
+        randcolor = randint(0, 255), randint(0, 255), randint(0, 255)
+        marked[rr, cc] = randcolor
+
+    print(image.shape, segments.shape, marked.shape)
+
+    io.imshow_collection([image, segments, marked])
     io.show()
 
 
