@@ -10,7 +10,7 @@ Use these labeled images to train a model that is able to predict signs from unl
 
 [Mapillary](http://mapillary.com) images licensed under the Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0).
 
-## Usage
+## Preparation
 
 Build the sign location extractor:
 
@@ -21,15 +21,32 @@ Grab some OSM extracts:
 
     ./osm.sh
 
+Get a clientId from Mapillary and export it for image fetching:
+
+    export EXIT_SIGNS_CLIENT_ID='YOUR-CLIENT-ID'
+
+## Usage
+
 Run the Sign location extractor on the extract and save out a list of locations:
 
     ./build/Release/extract-locations osm/*.osm.pbf > signLocations.csv
 
-Get clientId from Mapillary and use it to fetch images for locations:
+Fetch images for locations:
 
-    export EXIT_SIGNS_CLIENT_ID='YOUR-CLIENT-ID'
     mkdir -p signImages
     ./fetch-images.py signLocations.csv signImages
+
+Clean up images and label them with rectangles to generate a training set:
+
+    for image in signImages; do ./label-image.py signImages/$image signImages/labels.csv; done
+
+Train the R-CNN model on labeled images:
+
+    ./region-cnn.py --train signImages/labels.csv
+
+Predict signs on a new image:
+
+    ./region-cnn.py --predict image.jpg
 
 
 ## License
