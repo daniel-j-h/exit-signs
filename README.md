@@ -6,7 +6,13 @@ High-level idea:
 Extract location for `destination=*` and `exit_to=*` tags from OSM ways and nodes and query Mapillary to retrieve dashcam images.
 Use these labeled images to train a model that is able to predict signs from unlabeled images.
 
-![Signs](https://raw.github.com/daniel-j-h/exit-signs/master/.image.jpg)
+Automatically extracted dashcam images
+
+![Signs](https://raw.github.com/daniel-j-h/exit-signs/master/.images/overview.jpg)
+
+Segmentation and Region proposals
+
+![Proposals](https://raw.github.com/daniel-j-h/exit-signs/master/.images/proposals.jpg)
 
 [Mapillary](http://mapillary.com) images licensed under the Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0).
 
