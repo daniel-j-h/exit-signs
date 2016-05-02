@@ -32,7 +32,7 @@ from keras.utils import np_utils
 kFelzenszwalbScale = 500
 kNetImageShape = (3, 100, 100)
 kNetNumClasses = 2
-kNetBatchSize = 10000
+kNetBatchSize = 128
 kNetNumEpochs = 1
 kNetValidationSplit = 0.1
 
@@ -181,7 +181,7 @@ def mkArguments():
     parser.add_argument('--positive', type=str, help='.csv label file with positive samples to train model on')
     parser.add_argument('--negative', type=str, help='.csv label file with negative samples to train model on')
     parser.add_argument('--predict', type=str, help='image to run prediction on')
-    parser.add_argument('--modelFile', type=str, default='model.hdf5' help='.hdf5 model file to load model from or save model to')
+    parser.add_argument('--modelFile', type=str, default='model.hdf5', help='.hdf5 model file to load model from or save model to')
     return parser.parse_args()
 
 

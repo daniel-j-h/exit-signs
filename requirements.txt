@@ -3,3 +3,4 @@ scikit-image
 matplotlib
 keras
 scikit-learn
+h5py
